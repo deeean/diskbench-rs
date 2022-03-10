@@ -6,16 +6,40 @@ const ITERATION: i32 = 20;
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
 
-const ONE_MEBIBYTE: usize = 1024 << 10;
-const ONE_GIBIBYTE: usize = 1024 << 20;
+const ONE_MEGABYTE: usize = 1000 << 10;
+const ONE_GIGABYTE: usize = 1000 << 20;
 
-const READ_BUFFER_SIZE: usize = ONE_MEBIBYTE * 4;
-const WRITE_BUFFER_SIZE: usize = ONE_MEBIBYTE * 16;
+const READ_BUFFER_SIZE: usize = ONE_MEGABYTE * 4;
+const WRITE_BUFFER_SIZE: usize = ONE_MEGABYTE * 16;
+
+trait HumanReadable {
+  fn as_megabyte_per_second(&self) -> f32;
+}
+
+impl HumanReadable for u128 {
+  fn as_megabyte_per_second(&self) -> f32 {
+    *self as f32 / 1000.0 / 1000.0
+  }
+}
+
+fn warmup() -> Result<()> {
+  let mut file = File::create("diskbench-warmup.txt").expect("Cannot create test file");
+  let mut buffer = vec![0_u8; ONE_MEGABYTE];
+
+  for i in 0..ONE_MEGABYTE {
+    buffer[i] = fastrand::u8(..);
+  }
+
+  file.write_all(&buffer)?;
+  file.sync_data()?;
+
+  remove_file("diskbench-warmup.txt")
+}
 
 fn write(filename: String, buffer: &[u8]) -> Result<u128> {
   let mut file = File::create(filename.clone()).expect("Cannot create test file");
   let mut elapsed: u128 = 0;
-  let iteration = ONE_GIBIBYTE / WRITE_BUFFER_SIZE;
+  let iteration = ONE_GIGABYTE / WRITE_BUFFER_SIZE;
 
   for _ in 0..iteration {
     let now = Instant::now();
@@ -36,7 +60,7 @@ fn read(filename: String) -> Result<u128> {
   let mut reader = BufReader::new(file);
   let mut buffer = vec![0_u8; READ_BUFFER_SIZE];
   let mut elapsed: u128 = 0;
-  let iteration = ONE_GIBIBYTE / READ_BUFFER_SIZE;
+  let iteration = ONE_GIGABYTE / READ_BUFFER_SIZE;
 
   for _ in 0..iteration {
     let now = Instant::now();
@@ -55,10 +79,15 @@ fn cleanup(filenames: Vec<String>) {
     .iter()
     .for_each(|filename| {
       remove_file(filename.clone()).expect("Cannot delete test file")
-    })
+    });
 }
 
 pub fn benchmark() {
+  match warmup() {
+    Err(err) => panic!("{}", err),
+    _ => {}
+  }
+
   let mut filenames = Vec::new();
   let mut boxed_write_buffer = vec![0_u8; WRITE_BUFFER_SIZE].into_boxed_slice();
 
@@ -67,14 +96,15 @@ pub fn benchmark() {
   }
 
   for i in 0..ITERATION {
-    filenames.push(format!("diskbench{}.txt", i));
+    filenames.push(format!("diskbench-{}.txt", i));
   }
 
-  let write_reports = filenames
+  let write_results = filenames
     .iter()
     .filter_map(|filename| {
       match write(filename.clone(), boxed_write_buffer.as_ref()) {
         Ok(res) => {
+          println!(".");
           Some(res)
         },
         Err(err) => panic!("{}", err),
@@ -82,29 +112,27 @@ pub fn benchmark() {
     })
     .collect::<Vec<_>>();
 
-  let read_reports = filenames
+  let read_results = filenames
     .iter()
     .filter_map(|filename| {
       match read(filename.clone()) {
-        Ok(res) => Some(res),
+        Ok(res) => {
+          println!(".");
+          Some(res)
+        },
         Err(err) => panic!("{}", err),
       }
     })
     .collect::<Vec<_>>();
 
-  let write_sum_byte_per_second: u128 = write_reports
-    .iter()
-    .sum();
-
-  let read_sum_byte_per_second: u128 = read_reports
-    .iter()
-    .sum();
-
-  let write_average_byte_per_second: u128 = write_sum_byte_per_second / write_reports.len() as u128;
-  let read_average_byte_per_second: u128 = read_sum_byte_per_second / read_reports.len() as u128;
-
-  println!(" Write {:.2}MB/s", write_average_byte_per_second as f32 / 1024.0 / 1024.0);
-  println!("  Read {:.2}MB/s", read_average_byte_per_second as f32 / 1024.0 / 1024.0);
+  println!();
+  println!("Average write speed: {:.2}MB/s", (write_results.iter().sum::<u128>() / write_results.len() as u128).as_megabyte_per_second());
+  println!("    Min write speed: {:.2}MB/s", write_results.iter().min().unwrap().as_megabyte_per_second());
+  println!("    Max write speed: {:.2}MB/s", write_results.iter().max().unwrap().as_megabyte_per_second());
+  println!();
+  println!(" Average read speed: {:.2}MB/s", (read_results.iter().sum::<u128>() / read_results.len() as u128).as_megabyte_per_second());
+  println!("     Min read speed: {:.2}MB/s", read_results.iter().min().unwrap().as_megabyte_per_second());
+  println!("     Max read speed: {:.2}MB/s", read_results.iter().max().unwrap().as_megabyte_per_second());
 
   cleanup(filenames);
 }
