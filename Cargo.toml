@@ -1,9 +1,17 @@
 [package]
 name = "diskbench"
+description = "Simple Disk Benchmark"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["deeean <margintop3498@icloud.com>"]
+license = "MIT"
+include = ["src/**/*", "*.md"]
+keywords = ["io", "commandline"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/deeean/diskbench"
 
 [dependencies]
 fastrand = "1.7.0"
+
+[[bin]]
+name = "diskbench"
