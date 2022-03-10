@@ -9,7 +9,7 @@ const ONE_SECOND: Duration = Duration::from_secs(1);
 const ONE_MEGABYTE: usize = 1000 << 10;
 const ONE_GIGABYTE: usize = 1000 << 20;
 
-const READ_BUFFER_SIZE: usize = ONE_MEGABYTE * 4;
+const READ_BUFFER_SIZE: usize = ONE_MEGABYTE * 8;
 const WRITE_BUFFER_SIZE: usize = ONE_MEGABYTE * 16;
 
 trait HumanReadable {
@@ -58,11 +58,11 @@ fn write(filename: String, buffer: &[u8]) -> Result<u128> {
 fn read(filename: String) -> Result<u128> {
   let file = File::open(filename.clone()).expect("Cannot open test file");
   let mut reader = BufReader::new(file);
-  let mut buffer = vec![0_u8; READ_BUFFER_SIZE];
   let mut elapsed: u128 = 0;
   let iteration = ONE_GIGABYTE / READ_BUFFER_SIZE;
 
   for _ in 0..iteration {
+    let mut buffer = vec![0_u8; READ_BUFFER_SIZE];
     let now = Instant::now();
     reader.read(&mut buffer).expect("Unable to read data");
     elapsed += now.elapsed().as_nanos();
@@ -126,13 +126,13 @@ pub fn benchmark() {
     .collect::<Vec<_>>();
 
   println!();
-  println!("Average write speed: {:.2}MB/s", (write_results.iter().sum::<u128>() / write_results.len() as u128).as_megabyte_per_second());
-  println!("    Min write speed: {:.2}MB/s", write_results.iter().min().unwrap().as_megabyte_per_second());
-  println!("    Max write speed: {:.2}MB/s", write_results.iter().max().unwrap().as_megabyte_per_second());
+  println!("Average write speed: {:.1}MB/s", (write_results.iter().sum::<u128>() / write_results.len() as u128).as_megabyte_per_second());
+  println!("    Min write speed: {:.1}MB/s", write_results.iter().min().unwrap().as_megabyte_per_second());
+  println!("    Max write speed: {:.1}MB/s", write_results.iter().max().unwrap().as_megabyte_per_second());
   println!();
-  println!(" Average read speed: {:.2}MB/s", (read_results.iter().sum::<u128>() / read_results.len() as u128).as_megabyte_per_second());
-  println!("     Min read speed: {:.2}MB/s", read_results.iter().min().unwrap().as_megabyte_per_second());
-  println!("     Max read speed: {:.2}MB/s", read_results.iter().max().unwrap().as_megabyte_per_second());
+  println!("Average read speed: {:.1}MB/s", (read_results.iter().sum::<u128>() / read_results.len() as u128).as_megabyte_per_second());
+  println!("    Min read speed: {:.1}MB/s", read_results.iter().min().unwrap().as_megabyte_per_second());
+  println!("    Max read speed: {:.1}MB/s", read_results.iter().max().unwrap().as_megabyte_per_second());
 
   cleanup(filenames);
 }
