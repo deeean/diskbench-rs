@@ -1,7 +1,7 @@
-use crate::bench::{benchmark};
+use crate::diskbench::{bench};
 
-mod bench;
+mod diskbench;
 
 fn main() {
-  benchmark();
+  bench();
 }
