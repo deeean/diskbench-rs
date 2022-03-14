@@ -1,7 +1,7 @@
 [package]
 name = "diskbench"
-description = "Simple Disk Benchmark"
-version = "0.1.2"
+description = "Lightweight benchmark tools for HDD, SSD"
+version = "0.2.0"
 edition = "2021"
 authors = ["deeean <margintop3498@icloud.com>"]
 license = "MIT"
@@ -11,7 +11,10 @@ categories = ["command-line-utilities"]
 repository = "https://github.com/deeean/diskbench"
 
 [dependencies]
+seahorse = "2.0.0"
 fastrand = "1.7.0"
+indicatif = "0.16.2"
+parse-size = "1.0.0"
 
 [[bin]]
 name = "diskbench"
