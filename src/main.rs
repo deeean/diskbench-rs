@@ -20,12 +20,12 @@ fn main() {
     .flag(
       Flag::new("write_buffer_size", FlagType::String)
         .alias("w")
-        .description(format!("default {}", diskbench::DEFAULT_WRITE_BUFFER_SIZE.to_kilobyte()))
+        .description(format!("default {}", diskbench::DEFAULT_WRITE_BUFFER_SIZE.to_megabyte()))
     )
     .flag(
       Flag::new("read_buffer_size", FlagType::String)
         .alias("r")
-        .description(format!("default {}", diskbench::DEFAULT_READ_BUFFER_SIZE.to_kilobyte()))
+        .description(format!("default {}", diskbench::DEFAULT_READ_BUFFER_SIZE.to_megabyte()))
     )
     .flag(
       Flag::new("total_buffer_size", FlagType::String)
